@@ -1,0 +1,38 @@
+name: CI
+
+# Instala as dependências do backend e do frontend, builda o frontend e
+# executa os testes do backend em push e pull_request.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: Install, build e test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Instalar dependências do backend
+        working-directory: backend
+        run: npm install
+
+      - name: Instalar dependências do frontend
+        working-directory: frontend
+        run: npm install
+
+      - name: Buildar o frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Rodar os testes do backend
+        working-directory: backend
+        run: npm test
