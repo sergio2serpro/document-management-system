@@ -15,7 +15,7 @@ const upload = multer({
     // nome gerado em disco, nunca o nome original, para evitar colisão e path traversal
     filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}${path.extname(file.originalname)}`),
   }),
-  limits: { fileSize: MAX_UPLOAD_SIZE_MB * 1024 * 1024 },
+  limits: { fileSize: Math.round(MAX_UPLOAD_SIZE_MB * 1024 * 1024) },
 });
 
 const router = Router();
