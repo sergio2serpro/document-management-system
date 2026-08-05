@@ -28,6 +28,9 @@ app.use((err, req, res, next) => {
     const message = err.code === 'LIMIT_FILE_SIZE' ? 'Arquivo excede o tamanho máximo permitido.' : 'Falha ao processar o arquivo enviado.';
     return res.status(400).json({ error: message });
   }
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({ error: err.message });
+  }
   console.error(err);
   res.status(500).json({ error: 'Erro interno do servidor.' });
 });

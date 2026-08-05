@@ -19,7 +19,12 @@ function list(req, res) {
 function download(req, res) {
   try {
     const { document, filePath } = documentsService.getDocumentForDownload(req.params.id);
-    res.download(filePath, document.originalName);
+    res.download(filePath, document.originalName, (error) => {
+      // arquivo pode ter sido removido entre a verificação e o envio (condição de corrida)
+      if (error && !res.headersSent) {
+        handleError(res, { statusCode: 404, message: 'Documento não encontrado.' });
+      }
+    });
   } catch (error) {
     handleError(res, error);
   }

@@ -2,8 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const STORAGE_DIR = path.join(__dirname, '..', '..', 'storage');
+const { STORAGE_DIR } = require('../config/storage.config');
 
 fs.mkdirSync(STORAGE_DIR, { recursive: true });
 

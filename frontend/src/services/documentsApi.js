@@ -7,6 +7,12 @@ async function parseErrorMessage(response, fallbackMessage) {
   return body?.error || fallbackMessage;
 }
 
+async function ensureOk(response, fallbackMessage) {
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, fallbackMessage));
+  }
+}
+
 export async function uploadDocument({ file, owner }) {
   const formData = new FormData();
   formData.append('file', file);
@@ -17,9 +23,7 @@ export async function uploadDocument({ file, owner }) {
     body: formData,
   });
 
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, 'Falha ao enviar o documento.'));
-  }
+  await ensureOk(response, 'Falha ao enviar o documento.');
 
   return response.json();
 }
@@ -28,9 +32,7 @@ export async function listDocuments(owner) {
   const query = owner ? `?owner=${encodeURIComponent(owner)}` : '';
   const response = await fetch(`${API_BASE}/documents${query}`);
 
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, 'Falha ao carregar os documentos.'));
-  }
+  await ensureOk(response, 'Falha ao carregar os documentos.');
 
   return response.json();
 }
@@ -38,9 +40,7 @@ export async function listDocuments(owner) {
 export async function downloadDocument(id, fileName) {
   const response = await fetch(`${API_BASE}/documents/${id}/download`);
 
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, 'Falha ao baixar o documento.'));
-  }
+  await ensureOk(response, 'Falha ao baixar o documento.');
 
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);

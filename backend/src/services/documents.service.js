@@ -3,13 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const documentsRepository = require('../repositories/documents.repository');
-
-class HttpError extends Error {
-  constructor(statusCode, message) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
+const HttpError = require('../errors/http-error');
 
 function registerUpload({ file, owner }) {
   if (!file) {
