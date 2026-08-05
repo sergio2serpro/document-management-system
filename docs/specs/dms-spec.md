@@ -74,3 +74,71 @@ O repositório de metadados guarda essa estrutura em memória (ex.: `Map` por `i
     "uploadedAt": "2026-08-05T12:00:00.000Z",
     "owner": "user-1"
   }
+  ```
+- **Erros:**
+  - `400 Bad Request` — arquivo (`file`) ausente
+  - `400 Bad Request` — campo `owner` ausente ou vazio
+
+### `GET /documents`
+
+- **Entrada:** query string opcional `owner` para filtrar por dono
+- **Sucesso (200):**
+  ```json
+  [
+    {
+      "id": "uuid",
+      "originalName": "contrato.pdf",
+      "mimeType": "application/pdf",
+      "size": 20480,
+      "uploadedAt": "2026-08-05T12:00:00.000Z",
+      "owner": "user-1"
+    }
+  ]
+  ```
+  (o campo `storedName` não é exposto na resposta, por ser um detalhe interno de armazenamento)
+
+### `GET /documents/:id/download`
+
+- **Entrada:** `id` do documento na URL
+- **Sucesso (200):** conteúdo binário do arquivo, com cabeçalho
+  `Content-Disposition: attachment; filename="<originalName>"` e
+  `Content-Type` correspondente ao `mimeType` armazenado
+- **Erros:**
+  - `404 Not Found` — nenhum documento com o `id` informado
+
+## 7. Decisões arquiteturais
+
+- Backend em Clean Architecture simples, com quatro camadas em `backend/src`:
+  - `routes/` define os endpoints e delega para os controllers
+  - `controllers/` tratam entrada/saída HTTP e validação básica
+  - `services/` concentram as regras de negócio
+  - `repositories/` cuidam da persistência (arquivos em disco + metadados em memória)
+  - Fluxo de dependência: `routes -> controllers -> services -> repositories`;
+    camadas internas não conhecem camadas externas
+- Upload de arquivos via `multer` com `diskStorage` apontando para
+  `backend/storage`; nenhum provedor de armazenamento externo é utilizado
+- Metadados dos documentos mantidos em memória (ex.: `Map`), sem banco de dados
+  nesta fase
+- Frontend em React organizado por `components/`, `pages/` e `services/`,
+  consumindo a API via `fetch` com prefixo `/api` (proxy do Vite)
+- Configuração sensível a ambiente (porta, diretório de storage) via variáveis
+  de ambiente, seguindo 12-Factor App
+
+## 8. Plano de execução
+
+1. Construir as quatro camadas em `backend/src`:
+   - `routes/` define os endpoints e delega aos controllers
+   - `controllers/` tratam entrada/saída HTTP e validação básica
+   - `services/` concentram as regras de negócio
+   - `repositories/` cuidam da persistência
+2. Implementar os endpoints:
+   - `POST /upload`
+   - `GET /documents`
+   - `GET /documents/:id/download`
+3. Escrever testes automatizados (`node:test`) cobrindo upload, listagem,
+   download e os casos de erro (arquivo ausente, `owner` ausente, id inexistente)
+4. Integrar o frontend (páginas de upload, listagem e download) consumindo a
+   API via `/api`, reutilizando componentes existentes
+5. Validar o fluxo completo (upload → listagem → download) manualmente e via
+   testes, revisando tratamento de erros e mensagens ao usuário
+  }
