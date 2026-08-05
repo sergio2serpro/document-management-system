@@ -1,26 +1,38 @@
-// Seed do servidor backend do Document Management System.
-//
-// Este arquivo é apenas um ponto de partida mínimo. Ao longo do workshop você
-// vai usar o Agent Mode do GitHub Copilot para construir as camadas:
-//   - routes/       (definição das rotas)
-//   - controllers/  (entrada HTTP e validação)
-//   - services/     (regras de negócio)
-//   - repositories/ (persistência: arquivos locais + metadados em memória)
-//
-// Restrição do projeto: uploads são gravados no filesystem local da aplicação
-// usando multer com diskStorage. Não utilize provedores externos.
+// Servidor backend do Document Management System.
+// Uploads são gravados no filesystem local da aplicação via multer com
+// diskStorage; nenhum provedor de armazenamento externo é utilizado.
 
 const express = require('express');
+const multer = require('multer');
+const documentsRoutes = require('./routes/documents.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Endpoint de verificação de saúde. As demais rotas (/upload, /documents,
-// /documents/:id/download) serão implementadas durante o Passo 2.
+// Endpoint de verificação de saúde.
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.use(documentsRoutes);
+
+// Tratamento de erros de borda (JSON invalido, falhas do multer, etc.),
+// para nunca vazar stack trace ao cliente.
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Corpo da requisição inválido.' });
+  }
+  if (err instanceof multer.MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'Arquivo excede o tamanho máximo permitido.' : 'Falha ao processar o arquivo enviado.';
+    return res.status(400).json({ error: message });
+  }
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({ error: err.message });
+  }
+  console.error(err);
+  res.status(500).json({ error: 'Erro interno do servidor.' });
 });
 
 if (require.main === module) {
